@@ -4,8 +4,15 @@
   "description": "Stimulus mixin for declaring actions in the controller",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "happy-dom": "^20.0.8",
+    "jsdom": "^27.0.1",
+    "vitest": "^4.0.4"
+  }
 }
