@@ -5,12 +5,16 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "coverage:badge": "node scripts/generate-coverage-badge.js",
+    "ci": "vitest run --coverage && node scripts/generate-coverage-badge.js"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@hotwired/stimulus": "^3.2.2",
+    "@vitest/coverage-v8": "^4.0.4",
     "happy-dom": "^20.0.8",
     "jsdom": "^27.0.1",
     "vitest": "^4.0.4"

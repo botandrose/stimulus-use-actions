@@ -16,10 +16,11 @@
 - Naming: reflect Stimulus conventions. Keys in the `actions` map should match controller properties (e.g., `buttonTarget`, `buttonTargets`, or `window`). Action strings may be "click->method" or "method".
 
 ## Testing Guidelines
-- Framework: prefer Vitest or Jest. Name files `*.test.js`.
+- Framework: Vitest with `happy-dom`. Name files `*.test.js`.
 - Location: co-locate tests next to files or under `tests/`.
-- Coverage: target meaningful branches (multiple targets, `window` target, and prefixed events like `click->`).
-- Run: configure `npm test` to run your chosen framework and ensure it exits non-zero on failures.
+- Coverage: enforced at 100% (lines, functions, branches, statements). Use `npm run coverage`.
+- Scope: cover multiple targets, `window` target, and event prefixes like `click->`.
+- Run: `npm test` for a single run; `npm run test:watch` in dev.
 
 ## Commit & Pull Request Guidelines
 - Commits: use Conventional Commits when possible (e.g., `feat: add window target support`, `fix: handle single target elements`). Keep commits focused.
