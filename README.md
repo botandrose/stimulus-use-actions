@@ -1,27 +1,81 @@
 # stimulus-use-actions
 
-Small helper for Stimulus controllers to declare `data-action` bindings in JavaScript, instead of markup.
+Declare Stimulus `data-action` bindings in JavaScript instead of HTML markup.
 
 [![CI](https://github.com/botandrose/stimulus-use-actions/actions/workflows/ci.yml/badge.svg)](https://github.com/botandrose/stimulus-use-actions/actions/workflows/ci.yml)
 
 Requires Stimulus v3+ and ES modules.
 
-## Quick Example
+## Quick Start
+
+Import `Controller` from this package instead of `@hotwired/stimulus`. Declare
+`static actions` alongside your `static targets` -- that's it.
+
 ```js
-// controllers/demo_controller.js
-import { Controller } from "@hotwired/stimulus";
-import useActions from "stimulus-use-actions";
+import { Controller } from "stimulus-use-actions"
 
 export default class extends Controller {
-  static targets = ["button"];
+  static targets = ["field", "checkbox"]
+
+  static actions = {
+    field: "input->update",
+    checkbox: "change->rerender",
+    window: "resize->layout",
+  }
+
+  update(event) { /* ... */ }
+  rerender(event) { /* ... */ }
+  layout(event) { /* ... */ }
+}
+```
+
+Actions are bound via **event delegation** on the controller element. This
+means:
+
+- Listeners are added on `connect()` and removed on `disconnect()`
+- Target elements can appear and disappear in the DOM at any time -- events are
+  still captured
+- No need to call anything in `connect()` yourself
+
+### Keys
+
+Each key in `static actions` is a **target name** matching an entry in
+`static targets`, or the special key `window`.
+
+| Key       | Listens on          | Matches events from                          |
+| --------- | ------------------- | -------------------------------------------- |
+| `field`   | controller element  | descendants with `data-<id>-target="field"`  |
+| `window`  | `window`            | the window itself                            |
+
+### Values
+
+Values use Stimulus action descriptor syntax with an **explicit event**:
+
+| Value                          | Meaning                                    |
+| ------------------------------ | ------------------------------------------ |
+| `"input->update"`              | listen for `input`, call `this.update()`   |
+| `"click->save"`                | listen for `click`, call `this.save()`     |
+| `["click->a", "keyup->b"]`     | multiple actions on one target             |
+
+Stimulus modifiers work as usual, e.g. `"keyup.enter->submit"`.
+
+## Lower-Level API: `useActions`
+
+For cases where you need manual control (conditional bindings, dynamic action
+maps, etc.), import `useActions` directly:
+
+```js
+import { Controller } from "@hotwired/stimulus"
+import useActions from "stimulus-use-actions"
+
+export default class extends Controller {
+  static targets = ["button"]
 
   connect() {
     useActions(this, {
-      // plural targets: bind multiple events to each element
       buttonTargets: ["click->submit", "keyup->preview"],
-      // window-scoped actions
-      window: ["resize->reflow"],
-    });
+      window: "resize->reflow",
+    })
   }
 
   submit() { /* ... */ }
@@ -30,69 +84,27 @@ export default class extends Controller {
 }
 ```
 
-### Using the built-in Controller
-Import the base `Controller` from this package to auto-bind `static actions` without calling anything in `connect()`.
+`useActions` binds directly to target elements (no delegation). It does **not**
+clean up on disconnect -- Stimulus handles this through its own binding
+observer.
 
-```js
-import { Controller } from "stimulus-use-actions";
+### `useActions(controller, actions?)`
 
-export default class extends Controller {
-  static targets = ["button"];
+- **controller** -- your Stimulus controller instance (`this`)
+- **actions** -- map of target keys to action descriptors
+  - Keys: `<name>Target`, `<name>Targets`, or `window`
+  - Values: a string or array of `"event->method"` strings
+  - Event inference (e.g. `"submit"` without `click->`) is supported here --
+    Stimulus infers the default event for the element
+  - If omitted, reads from `controller.constructor.actions`
 
-  static actions = {
-    buttonTarget: ["click->submit", "keyup->preview"],
-    window: "resize->reflow",
-  };
-
-  submit() {}
-  preview() {}
-  reflow() {}
-}
-```
-
-### Using `static actions = {}`
-Define actions on the class and either:
-- Call `useActions(this)` without the second argument; or
-- Wrap your controller with `withActions()` to auto-bind in `connect()`.
-
-```js
-import useActions, { withActions } from "stimulus-use-actions";
-
-class Base extends Controller {
-  static targets = ["button"];
-  static actions = {
-    buttonTarget: ["click->submit", "keyup->preview"],
-    window: "resize->reflow",
-  };
-  submit() {}
-  preview() {}
-  reflow() {}
-  connect() { useActions(this); }
-}
-
-// Or auto-bind without calling in connect:
-export default withActions(Base);
-```
-
-## API
-`useActions(controller, actions)`
-
-- `controller`: your Stimulus controller instance (`this`).
-- `actions`: map of target keys to action descriptors.
-  - Target keys: `<name>Target`, `<name>Targets`, or the special key `window`.
-  - Values: a string (e.g., `"click->save"`, `"save"`) or an array of such strings.
-  - If omitted, actions are read from `controller.constructor.actions`.
-
-## Action Descriptors
-- `"event->method"`: binds a specific DOM event to `controller.method`.
-- `"method"` (no event): Stimulus infers the element’s default event (e.g., `click` for buttons, `input` for text inputs).
-- Works with Stimulus modifiers, e.g. `"keyup.enter->submit"`.
-
-## Target Resolution
-- For `<name>Targets`, each element in that target list receives each action.
-- For `<name>Target`, the single element receives each action.
-- `window` binds to the `@window` target (e.g., `"resize->reflow"`).
+A `withActions(BaseController)` wrapper is also available -- it returns a
+subclass that auto-calls `useActions(this)` in `connect()`.
 
 ## Notes
-- Call once per controller instance (typically in `connect()`). Calling repeatedly will add duplicate bindings.
-- Keep action names in sync with your controller methods; mismatches throw at runtime via Stimulus.
+
+- `useActions` binds once per call -- calling repeatedly adds duplicate
+  bindings.
+- The `Controller` base class uses delegation -- no duplicates, automatic
+  cleanup.
+- Keep method names in sync with your controller; mismatches throw at runtime.
