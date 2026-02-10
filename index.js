@@ -87,8 +87,9 @@ function bindDelegatedActions(controller) {
   Object.entries(actions).forEach(([key, descriptors]) => {
     const descriptorList = Array.isArray(descriptors) ? descriptors : [descriptors]
     const isWindow = key === "window"
+    const isElement = key === "element"
     let targetName
-    if (!isWindow) {
+    if (!isWindow && !isElement) {
       if (key.endsWith("Targets")) targetName = key.slice(0, -7)
       else if (key.endsWith("Target")) targetName = key.slice(0, -6)
       else targetName = key
@@ -108,6 +109,16 @@ function bindDelegatedActions(controller) {
         }
         window.addEventListener(eventName, handler)
         listeners.push({ target: window, eventName, handler })
+      } else if (isElement) {
+        const handler = (event) => {
+          if (filter && event.key !== (KEY_MAP[filter] || filter)) return
+          if (options.includes("self") && event.target !== controller.element) return
+          if (options.includes("stop")) event.stopPropagation()
+          if (options.includes("prevent")) event.preventDefault()
+          controller[methodName](event)
+        }
+        controller.element.addEventListener(eventName, handler)
+        listeners.push({ target: controller.element, eventName, handler })
       } else {
         const selector = `[data-${identifier}-target~="${targetName}"]`
         const handler = (event) => {

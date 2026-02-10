@@ -421,6 +421,118 @@ describe("exported Controller base (delegation)", () => {
     expect(calls.handled).toBe(1)
   })
 
+  it("binds events directly to the controller element", async () => {
+    root.innerHTML = `<div data-controller="demo"></div>`
+    const calls = { clicked: 0 }
+    class DemoController extends Controller {
+      static actions = { element: "click->clicked" }
+      clicked() { calls.clicked++ }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    root.querySelector("[data-controller='demo']").dispatchEvent(new Event("click", { bubbles: true }))
+    expect(calls.clicked).toBe(1)
+  })
+
+  it("cleans up element listeners on disconnect for element key", async () => {
+    root.innerHTML = `<div data-controller="demo"></div>`
+    const calls = { clicked: 0 }
+    class DemoController extends Controller {
+      static actions = { element: "click->clicked" }
+      clicked() { calls.clicked++ }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    const el = root.querySelector("[data-controller='demo']")
+    el.dispatchEvent(new Event("click", { bubbles: true }))
+    expect(calls.clicked).toBe(1)
+
+    el.removeAttribute("data-controller")
+    await nextTick()
+
+    el.dispatchEvent(new Event("click", { bubbles: true }))
+    expect(calls.clicked).toBe(1)
+  })
+
+  it("supports key filter on element events", async () => {
+    root.innerHTML = `<div data-controller="demo"></div>`
+    const calls = { handled: 0 }
+    class DemoController extends Controller {
+      static actions = { element: "keydown.enter->handled" }
+      handled() { calls.handled++ }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    const el = root.querySelector("[data-controller='demo']")
+    el.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))
+    expect(calls.handled).toBe(1)
+
+    el.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }))
+    expect(calls.handled).toBe(1)
+  })
+
+  it("supports element key filter with unmapped key name", async () => {
+    root.innerHTML = `<div data-controller="demo"></div>`
+    const calls = { handled: 0 }
+    class DemoController extends Controller {
+      static actions = { element: "keydown.a->handled" }
+      handled() { calls.handled++ }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    const el = root.querySelector("[data-controller='demo']")
+    el.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }))
+    expect(calls.handled).toBe(1)
+
+    el.dispatchEvent(new KeyboardEvent("keydown", { key: "b", bubbles: true }))
+    expect(calls.handled).toBe(1)
+  })
+
+  it("supports :self on element events", async () => {
+    root.innerHTML = `
+      <div data-controller="demo">
+        <span id="child">inner</span>
+      </div>
+    `
+    const calls = { clicked: 0 }
+    class DemoController extends Controller {
+      static actions = { element: "click->clicked:self" }
+      clicked() { calls.clicked++ }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    document.getElementById("child").dispatchEvent(new Event("click", { bubbles: true }))
+    expect(calls.clicked).toBe(0)
+
+    root.querySelector("[data-controller='demo']").dispatchEvent(new Event("click", { bubbles: true }))
+    expect(calls.clicked).toBe(1)
+  })
+
+  it("supports :stop and :prevent on element events", async () => {
+    root.innerHTML = `<div data-controller="demo"></div>`
+    const calls = { clicked: 0 }
+    class DemoController extends Controller {
+      static actions = { element: "click->clicked:stop:prevent" }
+      clicked() { calls.clicked++ }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    const el = root.querySelector("[data-controller='demo']")
+    const event = new Event("click", { bubbles: true, cancelable: true })
+    const stopSpy = vi.spyOn(event, "stopPropagation")
+    const preventSpy = vi.spyOn(event, "preventDefault")
+    el.dispatchEvent(event)
+    expect(calls.clicked).toBe(1)
+    expect(stopSpy).toHaveBeenCalled()
+    expect(preventSpy).toHaveBeenCalled()
+  })
+
   it("supports window array of descriptors", async () => {
     root.innerHTML = `<div data-controller="demo"></div>`
     const calls = { resized: 0, scrolled: 0 }

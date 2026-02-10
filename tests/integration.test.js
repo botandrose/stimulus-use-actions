@@ -79,6 +79,21 @@ describe("Stimulus integration", () => {
     expect(called).toBe(1);
   });
 
+  it("binds events directly to the controller element", async () => {
+    root.innerHTML = `<div data-controller="demo"></div>`;
+
+    let called = 0;
+    class DemoController extends Controller {
+      connect() { useActions(this, { element: "click->clicked" }); }
+      clicked() { called++; }
+    }
+
+    app.register("demo", DemoController);
+    await nextTick();
+    root.querySelector("[data-controller='demo']").dispatchEvent(new Event("click", { bubbles: true }));
+    expect(called).toBe(1);
+  });
+
   it("returns early when no actions are provided or found", async () => {
     root.innerHTML = `<div data-controller="demo"></div>`;
 
