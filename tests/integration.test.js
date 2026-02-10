@@ -79,6 +79,19 @@ describe("Stimulus integration", () => {
     expect(called).toBe(1);
   });
 
+  it("returns early when no actions are provided or found", async () => {
+    root.innerHTML = `<div data-controller="demo"></div>`;
+
+    class DemoController extends Controller {
+      connect() { useActions(this); }
+    }
+    app.register("demo", DemoController);
+    await nextTick();
+
+    const el = root.querySelector("[data-controller='demo']");
+    expect(el.dataset.action).toBeUndefined();
+  });
+
   it("supports multiple actions array on a single target", async () => {
     root.innerHTML = `
       <div data-controller="demo">

@@ -56,5 +56,28 @@ describe("static actions support", () => {
     document.getElementById("two").dispatchEvent(new Event("click", { bubbles: true }));
     expect(calls.submit).toBe(1);
   });
+
+  it("withActions calls super.connect() when base defines it", async () => {
+    root.innerHTML = `
+      <div data-controller="demo">
+        <button id="three" data-demo-target="button"></button>
+      </div>
+    `;
+
+    const calls = { submit: 0, connected: 0 };
+    class Base extends Controller {
+      static targets = ["button"];
+      static actions = { buttonTarget: "click->submit" };
+      connect() { calls.connected++; }
+      submit() { calls.submit++; }
+    }
+    const DemoController = withActions(Base);
+
+    app.register("demo", DemoController);
+    await nextTick();
+    document.getElementById("three").dispatchEvent(new Event("click", { bubbles: true }));
+    expect(calls.connected).toBe(1);
+    expect(calls.submit).toBe(1);
+  });
 });
 

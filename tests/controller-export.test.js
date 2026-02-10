@@ -33,5 +33,7 @@ describe("exported Controller base", () => {
     document.getElementById("btn").dispatchEvent(new Event("click", { bubbles: true }));
     expect(calls.submit).toBe(1);
   });
+
+
 });
 

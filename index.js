@@ -37,7 +37,7 @@ export default useActionsImpl
 export function withActions(BaseController) {
   return class WithActions extends BaseController {
     connect() {
-      if (super.connect) super.connect()
+      super.connect()
       // Bind actions declared on the class via `static actions = {}`
       // Call with only controller; it will resolve static actions
       useActionsImpl(this)
@@ -49,7 +49,7 @@ import { Controller as StimulusController } from "@hotwired/stimulus"
 // Base Controller that auto-binds actions declared via `static actions = {}`
 export class Controller extends StimulusController {
   connect() {
-    if (super.connect) super.connect()
+    super.connect()
     useActionsImpl(this)
   }
 }
