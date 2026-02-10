@@ -1,6 +1,6 @@
 {
   "name": "stimulus-use-actions",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Stimulus mixin for declaring actions in the controller",
   "main": "index.js",
   "scripts": {
