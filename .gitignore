@@ -5,9 +5,8 @@
 ## system files
 .DS_Store
 
-## npm
+## bun
 /node_modules/
-/npm-debug.log
 
 ## testing
 /coverage/
