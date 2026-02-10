@@ -20,11 +20,13 @@ export default class extends Controller {
   static actions = {
     field: "input->update",
     checkbox: "change->rerender",
+    element: "submit->save",
     window: "resize->layout",
   }
 
   update(event) { /* ... */ }
   rerender(event) { /* ... */ }
+  save(event) { /* ... */ }
   layout(event) { /* ... */ }
 }
 ```
@@ -45,6 +47,7 @@ Each key in `static actions` is a **target name** matching an entry in
 | Key       | Listens on          | Matches events from                          |
 | --------- | ------------------- | -------------------------------------------- |
 | `field`   | controller element  | descendants with `data-<id>-target="field"`  |
+| `element` | controller element  | the controller element itself                |
 | `window`  | `window`            | the window itself                            |
 
 ### Values
@@ -74,6 +77,7 @@ export default class extends Controller {
   connect() {
     useActions(this, {
       buttonTargets: ["click->submit", "keyup->preview"],
+      element: "submit->save",
       window: "resize->reflow",
     })
   }
@@ -92,7 +96,7 @@ observer.
 
 - **controller** -- your Stimulus controller instance (`this`)
 - **actions** -- map of target keys to action descriptors
-  - Keys: `<name>Target`, `<name>Targets`, or `window`
+  - Keys: `<name>Target`, `<name>Targets`, `element`, or `window`
   - Values: a string or array of `"event->method"` strings
   - Event inference (e.g. `"submit"` without `click->`) is supported here --
     Stimulus infers the default event for the element
