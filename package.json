@@ -3,6 +3,7 @@
   "version": "0.3.0",
   "description": "Stimulus mixin for declaring actions in the controller",
   "main": "index.js",
+  "files": ["index.js"],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
