@@ -100,39 +100,32 @@ function bindDelegatedActions(controller) {
       if (!parsed) return
       const { eventName, filter, methodName, options } = parsed
 
+      let listenTarget, guard
       if (isWindow) {
-        const handler = (event) => {
-          if (filter && event.key !== (KEY_MAP[filter] || filter)) return
-          if (options.includes("stop")) event.stopPropagation()
-          if (options.includes("prevent")) event.preventDefault()
-          controller[methodName](event)
-        }
-        window.addEventListener(eventName, handler)
-        listeners.push({ target: window, eventName, handler })
+        listenTarget = window
+        guard = () => true
       } else if (isElement) {
-        const handler = (event) => {
-          if (filter && event.key !== (KEY_MAP[filter] || filter)) return
-          if (options.includes("self") && event.target !== controller.element) return
-          if (options.includes("stop")) event.stopPropagation()
-          if (options.includes("prevent")) event.preventDefault()
-          controller[methodName](event)
-        }
-        controller.element.addEventListener(eventName, handler)
-        listeners.push({ target: controller.element, eventName, handler })
+        listenTarget = controller.element
+        guard = (event) => !options.includes("self") || event.target === controller.element
       } else {
         const selector = `[data-${identifier}-target~="${targetName}"]`
-        const handler = (event) => {
+        listenTarget = controller.element
+        guard = (event) => {
           const matched = event.target.closest(selector)
-          if (!matched || !controller.element.contains(matched)) return
-          if (filter && event.key !== (KEY_MAP[filter] || filter)) return
-          if (options.includes("self") && event.target !== matched) return
-          if (options.includes("stop")) event.stopPropagation()
-          if (options.includes("prevent")) event.preventDefault()
-          controller[methodName](event)
+          if (!matched || !controller.element.contains(matched)) return false
+          return !options.includes("self") || event.target === matched
         }
-        controller.element.addEventListener(eventName, handler)
-        listeners.push({ target: controller.element, eventName, handler })
       }
+
+      const handler = (event) => {
+        if (!guard(event)) return
+        if (filter && event.key !== (KEY_MAP[filter] || filter)) return
+        if (options.includes("stop")) event.stopPropagation()
+        if (options.includes("prevent")) event.preventDefault()
+        controller[methodName](event)
+      }
+      listenTarget.addEventListener(eventName, handler)
+      listeners.push({ target: listenTarget, eventName, handler })
     })
   })
 
