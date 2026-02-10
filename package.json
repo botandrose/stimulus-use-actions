@@ -16,8 +16,10 @@
   },
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2"
+  },
   "devDependencies": {
-    "@hotwired/stimulus": "^3.2.2",
     "@vitest/coverage-v8": "^4.0.4",
     "happy-dom": "^20.0.8",
     "jsdom": "^27.0.1",
