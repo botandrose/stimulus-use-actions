@@ -124,8 +124,9 @@ function bindDelegatedActions(controller) {
         if (options.includes("prevent")) event.preventDefault()
         controller[methodName](event)
       }
-      listenTarget.addEventListener(eventName, handler)
-      listeners.push({ target: listenTarget, eventName, handler })
+      const capture = !isWindow && !isElement
+      listenTarget.addEventListener(eventName, handler, capture)
+      listeners.push({ target: listenTarget, eventName, handler, capture })
     })
   })
 
@@ -133,19 +134,25 @@ function bindDelegatedActions(controller) {
 }
 
 function unbindDelegatedActions(listeners) {
-  listeners.forEach(({ target, eventName, handler }) => {
-    target.removeEventListener(eventName, handler)
+  listeners.forEach(({ target, eventName, handler, capture }) => {
+    target.removeEventListener(eventName, handler, capture)
   })
 }
 
 export class Controller extends StimulusController {
-  connect() {
-    super.connect()
-    this._useActionListeners = bindDelegatedActions(this)
-  }
-  disconnect() {
-    super.disconnect()
-    unbindDelegatedActions(this._useActionListeners)
+  initialize() {
+    super.initialize()
     this._useActionListeners = []
+    const userConnect = this.connect
+    const userDisconnect = this.disconnect
+    this.connect = () => {
+      userConnect.call(this)
+      this._useActionListeners = bindDelegatedActions(this)
+    }
+    this.disconnect = () => {
+      unbindDelegatedActions(this._useActionListeners)
+      this._useActionListeners = []
+      userDisconnect.call(this)
+    }
   }
 }

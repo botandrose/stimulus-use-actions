@@ -533,6 +533,48 @@ describe("exported Controller base (delegation)", () => {
     expect(preventSpy).toHaveBeenCalled()
   })
 
+  it("works when subclass overrides connect without calling super", async () => {
+    root.innerHTML = `
+      <div data-controller="demo">
+        <button id="btn" data-demo-target="button"></button>
+      </div>
+    `
+    const calls = { clicked: 0, connected: false }
+    class DemoController extends Controller {
+      static targets = ["button"]
+      static actions = { button: "click->clicked" }
+      connect() {
+        calls.connected = true
+      }
+      clicked() { calls.clicked++ }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    expect(calls.connected).toBe(true)
+    document.getElementById("btn").dispatchEvent(new Event("click", { bubbles: true }))
+    expect(calls.clicked).toBe(1)
+  })
+
+  it("delegates non-bubbling events from target elements", async () => {
+    root.innerHTML = `
+      <div data-controller="demo">
+        <video id="vid" data-demo-target="video"></video>
+      </div>
+    `
+    const calls = { played: 0 }
+    class DemoController extends Controller {
+      static targets = ["video"]
+      static actions = { video: "play->played" }
+      played() { calls.played++ }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    document.getElementById("vid").dispatchEvent(new Event("play"))
+    expect(calls.played).toBe(1)
+  })
+
   it("supports window array of descriptors", async () => {
     root.innerHTML = `<div data-controller="demo"></div>`
     const calls = { resized: 0, scrolled: 0 }
