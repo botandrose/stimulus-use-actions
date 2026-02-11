@@ -37,7 +37,7 @@ means:
 - Listeners are added on `connect()` and removed on `disconnect()`
 - Target elements can appear and disappear in the DOM at any time -- events are
   still captured
-- No need to call anything in `connect()` yourself
+- No need to call `super.connect()` -- actions bind automatically
 
 ### Keys
 
