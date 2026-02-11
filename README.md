@@ -76,7 +76,10 @@ export default class extends Controller {
 
   connect() {
     useActions(this, {
-      buttonTargets: ["click->submit", "keyup->preview"],
+      buttonTargets: [
+        "click->submit",
+        "keyup->preview",
+      ],
       element: "submit->save",
       window: "resize->reflow",
     })
