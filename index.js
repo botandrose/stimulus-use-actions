@@ -78,6 +78,27 @@ function parseDescriptor(descriptor) {
   return { eventName, filter, methodName, options }
 }
 
+function camelize(str) {
+  return str.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+}
+
+function typecast(value) {
+  try { return JSON.parse(value) } catch { return value }
+}
+
+function paramsForElement(element, identifier) {
+  const params = {}
+  const prefix = `data-${identifier}-`
+  const suffix = "-param"
+  for (const attr of element.attributes) {
+    if (attr.name.startsWith(prefix) && attr.name.endsWith(suffix)) {
+      const key = camelize(attr.name.slice(prefix.length, -suffix.length))
+      params[key] = typecast(attr.value)
+    }
+  }
+  return Object.freeze(params)
+}
+
 function bindDelegatedActions(controller) {
   const actions = controller.constructor.actions
   if (!actions || typeof actions !== "object") return []
@@ -113,15 +134,24 @@ function bindDelegatedActions(controller) {
         guard = (event) => {
           const matched = event.target.closest(selector)
           if (!matched || !controller.element.contains(matched)) return false
-          return !options.includes("self") || event.target === matched
+          if (options.includes("self") && event.target !== matched) return false
+          return matched
         }
       }
 
       const handler = (event) => {
-        if (!guard(event)) return
+        const match = guard(event)
+        if (!match) return
         if (filter && event.key !== (KEY_MAP[filter] || filter)) return
         if (options.includes("stop")) event.stopPropagation()
         if (options.includes("prevent")) event.preventDefault()
+        if (match instanceof Element) {
+          Object.defineProperty(event, "currentTarget", { value: match, configurable: true })
+          Object.defineProperty(event, "params", {
+            value: paramsForElement(match, identifier),
+            configurable: true,
+          })
+        }
         controller[methodName](event)
       }
       const capture = !isWindow && !isElement

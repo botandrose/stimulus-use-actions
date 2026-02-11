@@ -575,6 +575,65 @@ describe("exported Controller base (delegation)", () => {
     expect(calls.played).toBe(1)
   })
 
+  it("sets event.currentTarget to the matched target element", async () => {
+    root.innerHTML = `
+      <div data-controller="demo">
+        <div id="target" data-demo-target="item">
+          <span id="child">Click me</span>
+        </div>
+      </div>
+    `
+    let receivedTarget = null
+    class DemoController extends Controller {
+      static targets = ["item"]
+      static actions = { item: "click->clicked" }
+      clicked(event) { receivedTarget = event.currentTarget }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    document.getElementById("child").dispatchEvent(new Event("click", { bubbles: true }))
+    expect(receivedTarget).toBe(document.getElementById("target"))
+  })
+
+  it("provides event.params from target element data attributes", async () => {
+    root.innerHTML = `
+      <div data-controller="demo">
+        <button id="btn" data-demo-target="item" data-demo-id-param="42" data-demo-name-param="hello"></button>
+      </div>
+    `
+    let receivedParams = null
+    class DemoController extends Controller {
+      static targets = ["item"]
+      static actions = { item: "click->clicked" }
+      clicked(event) { receivedParams = event.params }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    document.getElementById("btn").dispatchEvent(new Event("click", { bubbles: true }))
+    expect(receivedParams).toEqual({ id: 42, name: "hello" })
+  })
+
+  it("camelizes hyphenated param names", async () => {
+    root.innerHTML = `
+      <div data-controller="demo">
+        <button id="btn" data-demo-target="item" data-demo-my-value-param="42"></button>
+      </div>
+    `
+    let receivedParams = null
+    class DemoController extends Controller {
+      static targets = ["item"]
+      static actions = { item: "click->clicked" }
+      clicked(event) { receivedParams = event.params }
+    }
+    app.register("demo", DemoController)
+    await nextTick()
+
+    document.getElementById("btn").dispatchEvent(new Event("click", { bubbles: true }))
+    expect(receivedParams).toEqual({ myValue: 42 })
+  })
+
   it("supports window array of descriptors", async () => {
     root.innerHTML = `<div data-controller="demo"></div>`
     const calls = { resized: 0, scrolled: 0 }
